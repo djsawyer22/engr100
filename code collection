@@ -1,0 +1,276 @@
+#include <SPI.h>
+#include <SD.h>
+#include <SoftwareSerial.h>
+
+void collectTemp1();
+void collectTemp2();
+void collectHumidity();
+void collectPressure();
+void collectAccelerometer();
+
+double convertedTemperature1(double raw_value);
+double convertedTemperature2(double raw_value);
+double convertedHumidity(double raw_value);
+double convertedPressure(double raw_value);
+double convertedAccelerometerX(double raw_value);
+double convertedAccelerometerY(double raw_value);
+double convertedAccelerometerZ(double raw_value);
+
+double time = 0.0;
+
+File dataFile;
+const int chipSelect = 10;
+
+const int TEMP1_PIN = 0;
+const int TEMP2_PIN = 1;
+const int HUMIDITY_PIN = 7;
+const int PRESSURE_PIN = 2;
+const int ACCELEROMETER_X_PIN = 3;
+const int ACCELEROMETER_Y_PIN = 4;
+const int ACCELEROMETER_Z_PIN = 5;
+
+bool serialGPS = false;
+bool serialTemp1 = true;
+bool serialTemp2 = true;
+bool serialHumidity = true;
+bool serialPressure = true;
+bool serialAccelerometer = true;
+
+bool cardGPS = false;
+bool cardTemp1 = false;
+bool cardTemp2 = false;
+bool cardHumidity = false;
+bool cardPressure = false;
+bool cardAccelerometer = true;
+
+SoftwareSerial gps(2, 3);
+const int nChars = 500;
+char gps_string[nChars];
+
+void setup() {
+  Serial.begin(9600);
+  while (!Serial) {
+    ;
+  }
+
+  Serial.print("Initializing SD card...");
+
+  if (!SD.begin()) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  Serial.println("initialization done.");
+
+  dataFile = SD.open("data.txt", FILE_WRITE);
+  delay(10);
+
+  gps.begin(9600);
+  while (!gps) {
+    delay(2);
+  }
+
+  gps.listen();
+  Serial.println("GPS is initialized!"); 
+}
+
+void read_gps() {
+  char t;
+
+  while (gps.available()) {
+    t = gps.read();
+    delay(1);
+  }
+
+  while (!gps.available()) {
+    delay(1);
+  }
+
+  int iChar = 0;
+  while (gps.available()) {
+    gps_string[iChar] = gps.read();
+    iChar++;
+    delay(1);
+  }
+}
+
+void clear_gps_string() {
+  for (int i = 0; i < nChars ; i++) gps_string[i] = '\0';
+}
+
+void loop() {
+
+  delay(10);
+  time = millis() / 1000.0;
+  if (dataFile) {
+    dataFile.println(" ");
+    dataFile.println(" ");
+    dataFile.print(time);
+    dataFile.print(", ");
+  }
+
+  Serial.println(" ");
+  Serial.println(" ");
+  Serial.print(time);
+  Serial.print(", ");
+
+  collectTemp1();
+  collectTemp2();
+  collectHumidity();
+  collectPressure();
+  collectAccelerometer();
+  collectGPS();
+  
+  dataFile.flush();
+
+  delay(1000);
+}
+
+void collectGPS() {
+  if (serialGPS) {
+    clear_gps_string();
+    read_gps();
+    Serial.println(" ");
+    Serial.println(gps_string);
+  }
+
+  if (cardGPS) {
+    if (dataFile) {
+      clear_gps_string();
+      read_gps();
+      dataFile.println(" ");
+      dataFile.println(gps_string);
+    }
+  }
+}
+
+void collectTemp1() {
+  if(serialTemp1) {
+    //Serial.print(convertedTemperature1(analogRead(TEMP1_PIN)));
+    Serial.print(analogRead(TEMP1_PIN));
+    Serial.print(", ");
+  }
+
+  if(cardTemp1) {
+    if (dataFile) {
+      //dataFile.print(convertedTemperature1(analogRead(TEMP1_PIN)));
+      dataFile.print(analogRead(TEMP1_PIN));
+      dataFile.print(", ");      
+    }
+  }
+}
+
+void collectTemp2() {
+  if(serialTemp2) {
+    //Serial.print(convertedTemperature2(analogRead(TEMP2_PIN)));
+    Serial.print(analogRead(TEMP2_PIN));
+    Serial.print(", ");
+  }
+
+  if(cardTemp2) {
+    if (dataFile) {
+      //dataFile.print(convertedTemperature2(analogRead(TEMP2_PIN)));
+      dataFile.print(analogRead(TEMP2_PIN));
+      dataFile.print(", ");
+    }
+  }
+}
+
+void collectHumidity() {
+  if(serialHumidity) {
+    //Serial.print(convertedHumidity(analogRead(HUMIDITY_PIN)));
+    Serial.print(analogRead(HUMIDITY_PIN));
+    Serial.print(", ");
+  }
+
+  if(cardHumidity) {
+    if (dataFile) {
+      //dataFile.print(convertedHumidity(analogRead(HUMIDITY_PIN)));
+      dataFile.print(analogRead(HUMIDITY_PIN));
+      dataFile.print(", ");
+    }
+  }
+}
+
+void collectPressure() {
+  if(serialPressure) {
+    //Serial.print(convertedPressure(analogRead(PRESSURE_PIN)));
+    Serial.print(analogRead(PRESSURE_PIN));
+    Serial.print(", ");
+  }
+
+  if(cardPressure) {
+    if (dataFile) {
+      //dataFile.print(convertedPressure(analogRead(PRESSURE_PIN)));
+      dataFile.print(analogRead(PRESSURE_PIN));
+      dataFile.print(", ");
+    }
+  }
+}
+
+void collectAccelerometer() {
+  if(serialAccelerometer) {
+
+    //Serial.print(convertedAccelerometerX(analogRead(ACCELEROMETER_X_PIN)));
+    Serial.print(analogRead(ACCELEROMETER_X_PIN));
+    Serial.print(", ");
+
+    //Serial.print(convertedAccelerometerY(analogRead(ACCELEROMETER_Y_PIN)));
+    Serial.print(analogRead(ACCELEROMETER_Y_PIN));
+    Serial.print(", ");
+
+    //Serial.print(convertedAccelerometerY(analogRead(ACCELEROMETER_Y_PIN)));
+    Serial.print(analogRead(ACCELEROMETER_Z_PIN));
+    Serial.print(", ");
+  }
+
+  if(cardAccelerometer) {
+    if (dataFile) {
+      //dataFile.print(convertedAccelerometerX(analogRead(ACCELEROMETER_X_PIN)));
+      dataFile.print(analogRead(ACCELEROMETER_X_PIN));
+      dataFile.print(", ");
+
+      //dataFile.print(convertedAccelerometerY(analogRead(ACCELEROMETER_Y_PIN)));
+      dataFile.print(analogRead(ACCELEROMETER_Y_PIN));
+      dataFile.print(", ");
+
+      //dataFile.print(convertedAccelerometerY(analogRead(ACCELEROMETER_Y_PIN)));
+      dataFile.print(analogRead(ACCELEROMETER_Z_PIN));
+      dataFile.print(", ");
+    }
+  }
+}
+
+double convertedTemperature1(double raw_value) {
+  double temp = 1.76*(raw_value - 80) + 20.56;
+  return temp;
+}
+
+double convertedTemperature2(double raw_value) {
+  double temp = 3.52*(raw_value - 84) + 20.56;
+  return temp;
+}
+
+double convertedHumidity(double raw_value) {
+  double hum = 0.003085*(raw_value - 275) + 0.17;
+  return hum;
+}
+
+double convertedPressure(double raw_value) {
+  double pres = raw_value * 9.531;
+  return pres;
+}
+
+double convertedAccelerometerX(double raw_value) {
+  double accx = (raw_value * 5.0/1023.0) * -2.85714 + 5.1714;
+  return accx;
+}
+
+double convertedAccelerometerY(double raw_value) {
+  double accy = (raw_value * 5.0/1023.0) * -2.77778 + 5.0278;
+  return accy;
+}
+
+double convertedAccelerometerZ(double raw_value) {
+  double accz = (raw_value * 5.0/1023.0) * -2.77778 + 5.13889;
+  return accz;  
+}
